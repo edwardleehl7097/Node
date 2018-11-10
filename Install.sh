@@ -1,12 +1,14 @@
 #!/bin/bash
+# Replease coin
 
-CONFIG_FILE='birakecoin.conf'
-CONFIGFOLDER='/root/.birakecoin'
-COIN_DAEMON='/usr/local/bin/birakecoind'
-COIN_CLI='/usr/local/bin/birakecoin-cli'
-COIN_REPO='https://github.com/birake/birakecoin/releases/download/v1.0.0.0/birakecoin-1.0.0-x86_64-linux-gnu.tar.gz'
-COIN_NAME='BirakeCoin'
-COIN_BIN_NAME='BirakeCoin'
+CONFIG_FILE='coin.conf'
+CONFIGFOLDER='/root/.coin'
+COIN_DAEMON='/home/mn1/coin/coind'
+COIN_CLI='/home/mn1/coin/coin-cli'
+COIN_REPO='coin release'
+COIN_NAME='Coin'
+COIN_BIN_NAME='Coin'
+USER='MN1'
 COIN_PORT=39697
 RPC_PORT=39698
 BIND=""
@@ -84,13 +86,13 @@ function compile_node() {
 }
 
 function configure_systemd() {
-  cat << EOF > /etc/systemd/system/$COIN_NAME.service
+  cat << EOF > /etc/systemd/user/$COIN_NAME-$USER.service
 [Unit]
-Description=$COIN_NAME service
+Description=$COIN_NAME-$USER service
 After=network.target
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=forking
 #PIDFile=$CONFIGFOLDER/$COIN_NAME.pid
 ExecStart=$COIN_DAEMON -daemon -conf=$CONFIGFOLDER/$CONFIG_FILE -datadir=$CONFIGFOLDER
@@ -107,20 +109,20 @@ EOF
 
   systemctl daemon-reload
   sleep 3
-  systemctl start $COIN_NAME.service
-  systemctl enable $COIN_NAME.service >/dev/null 2>&1
+  systemctl start $COIN_NAME-$USER.service
+  systemctl enable $COIN_NAME-$USER.service >/dev/null 2>&1
 
   if [[ -z "$(ps axo cmd:100 | egrep $COIN_DAEMON)" ]]; then
-    echo -e "${RED}$COIN_NAME is not running${NC}, please investigate. You should start by running the following commands as root:"
+    echo -e "${RED}$COIN_NAME-$USER is not running${NC}, please investigate. You should start by running the following commands as root:"
     echo -e "${GREEN}systemctl start $COIN_NAME.service"
-    echo -e "systemctl status $COIN_NAME.service"
+    echo -e "systemctl status $COIN_NAME-$USER.service"
     echo -e "less /var/log/syslog${NC}"
     exit 1
   fi
 }
 
 function configure_startup() {
-  cat << EOF > /etc/init.d/$COIN_NAME
+  cat << EOF > /etc/init.d/$COIN_NAME-$USER
 #! /bin/bash
 ### BEGIN INIT INFO
 # Provides: $COIN_NAME
@@ -146,17 +148,17 @@ case "\$1" in
    $COIN_DAEMON -datadir=$CONFIGFOLDER -daemon
    ;;
  *)
-   echo "Usage: $COIN_NAME -datadir=$CONFIGFOLDER {start|stop|restart}" >&2
+   echo "Usage: $COIN_NAME-$USER -datadir=$CONFIGFOLDER {start|stop|restart}" >&2
    exit 3
    ;;
 esac
 EOF
-chmod +x /etc/init.d/$COIN_NAME >/dev/null 2>&1
-update-rc.d $COIN_NAME defaults >/dev/null 2>&1
-/etc/init.d/$COIN_NAME start >/dev/null 2>&1
+chmod +x /etc/init.d/$COIN_NAME-$USER >/dev/null 2>&1
+update-rc.d $COIN_NAME-$USER defaults >/dev/null 2>&1
+/etc/init.d/$COIN_NAME-$USER start >/dev/null 2>&1
 if [ "$?" -gt "0" ]; then
  sleep 5
- /etc/init.d/$COIN_NAME start >/dev/null 2>&1
+ /etc/init.d/$COIN_NAME-$USER start >/dev/null 2>&1
 fi
 }
 
